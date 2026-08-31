@@ -24,7 +24,7 @@ function SyncBadge() {
   return (
     <button onClick={() => void syncNow()} style={{ marginTop: 'auto', background: 'var(--sidebar-active-bg)', borderRadius: 14, padding: 12, textAlign: 'left' }}>
       <div style={{ fontSize: 10.5, fontWeight: 600, lineHeight: 1.4, color }}>{label}</div>
-      <div style={{ fontSize: 10, color: 'var(--sidebar-text)', marginTop: 2 }}>OneDrive · bấm để đồng bộ lại</div>
+      <div style={{ fontSize: 10, color: 'var(--sidebar-text)', marginTop: 2 }}>GitHub · bấm để đồng bộ lại</div>
     </button>
   )
 }

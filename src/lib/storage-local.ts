@@ -1,10 +1,11 @@
 import type { AppData } from '../types'
-import type { FileRef } from './graph'
+import type { RepoRef } from './github-storage'
 
 const DATA_KEY = 'bp.cache.data'
-const FILE_KEY = 'bp.fileRef'
-const LINK_KEY = 'bp.shareUrl'
+const REPO_KEY = 'bp.repoRef'
+const REPO_INPUT_KEY = 'bp.repoInput'
 const SYNC_KEY = 'bp.lastSync'
+const DIRTY_KEY = 'bp.dirty'
 
 export function loadCachedData(): AppData | null {
   try {
@@ -23,22 +24,23 @@ export function saveCachedData(data: AppData): void {
   }
 }
 
-export function loadFileRef(): FileRef | null {
+export function loadRepoRef(): RepoRef | null {
   try {
-    const raw = localStorage.getItem(FILE_KEY)
-    return raw ? (JSON.parse(raw) as FileRef) : null
+    const raw = localStorage.getItem(REPO_KEY)
+    const ref = raw ? (JSON.parse(raw) as RepoRef) : null
+    return ref && ref.owner && ref.repo ? ref : null
   } catch {
     return null
   }
 }
 
-export function saveFileRef(ref: FileRef, shareUrl: string): void {
-  localStorage.setItem(FILE_KEY, JSON.stringify(ref))
-  localStorage.setItem(LINK_KEY, shareUrl)
+export function saveRepoRef(ref: RepoRef, repoInput: string): void {
+  localStorage.setItem(REPO_KEY, JSON.stringify(ref))
+  localStorage.setItem(REPO_INPUT_KEY, repoInput)
 }
 
-export function loadShareUrl(): string {
-  return localStorage.getItem(LINK_KEY) || ''
+export function loadRepoInput(): string {
+  return localStorage.getItem(REPO_INPUT_KEY) || ''
 }
 
 export function saveLastSync(iso: string): void {
@@ -49,9 +51,7 @@ export function loadLastSync(): string {
   return localStorage.getItem(SYNC_KEY) || ''
 }
 
-const DIRTY_KEY = 'bp.dirty'
-
-/** Cờ "còn thay đổi chưa ghi lên file" — sống qua reload/redirect đăng nhập. */
+/** Cờ "còn thay đổi chưa ghi lên repo" — sống qua reload. */
 export function saveDirty(dirty: boolean): void {
   try {
     if (dirty) localStorage.setItem(DIRTY_KEY, '1')
@@ -65,8 +65,12 @@ export function loadDirty(): boolean {
 
 export function clearConnection(): void {
   localStorage.removeItem(DIRTY_KEY)
-  localStorage.removeItem(FILE_KEY)
-  localStorage.removeItem(LINK_KEY)
+  localStorage.removeItem(REPO_KEY)
+  localStorage.removeItem(REPO_INPUT_KEY)
   localStorage.removeItem(DATA_KEY)
   localStorage.removeItem(SYNC_KEY)
+  // dọn cả key của bản OneDrive cũ nếu còn
+  localStorage.removeItem('bp.fileRef')
+  localStorage.removeItem('bp.shareUrl')
+  localStorage.removeItem('bp.msalClientId')
 }

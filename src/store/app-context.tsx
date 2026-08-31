@@ -1,8 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { AppData } from '../types'
 import { DEFAULT_SETTINGS } from '../types'
-import { completeRedirect, getStoredClientId, login, logout, setStoredClientId } from '../lib/msal'
-import { ensureSheets, getMe, readAll, resolveShareLink, writeAll, type FileRef } from '../lib/graph'
+import { connectRepo, readData, writeData, whoAmI, setStoredToken, getStoredToken, clearToken, type RepoRef } from '../lib/github-storage'
 import * as local from '../lib/storage-local'
 
 export type SyncStatus = 'synced' | 'syncing' | 'dirty' | 'offline' | 'error'
@@ -11,15 +10,12 @@ export type Phase = 'boot' | 'connect' | 'ready'
 interface AppStore {
   phase: Phase
   data: AppData
-  fileRef: FileRef | null
-  shareUrl: string
-  accountEmail: string
+  repoRef: RepoRef | null
+  accountLogin: string
   syncStatus: SyncStatus
   lastSync: string
   online: boolean
-  connectError: string
-  signIn: () => Promise<void>
-  connectFile: (shareUrl: string, clientId: string) => Promise<void>
+  connect: (repoInput: string, token: string) => Promise<void>
   disconnect: () => Promise<void>
   syncNow: () => Promise<void>
   mutate: (updater: (d: AppData) => AppData) => void
@@ -31,18 +27,17 @@ const Ctx = createContext<AppStore | null>(null)
 export function AppProvider({ children }: { children: ReactNode }) {
   const [phase, setPhase] = useState<Phase>('boot')
   const [data, setData] = useState<AppData>(EMPTY)
-  const [fileRef, setFileRef] = useState<FileRef | null>(null)
-  const [accountEmail, setAccountEmail] = useState('')
+  const [repoRef, setRepoRef] = useState<RepoRef | null>(null)
+  const [accountLogin, setAccountLogin] = useState('')
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('synced')
   const [lastSync, setLastSync] = useState(local.loadLastSync())
   const [online, setOnline] = useState(navigator.onLine)
-  const [connectError, setConnectError] = useState('')
   const writeTimer = useRef<number | null>(null)
   const dataRef = useRef(data)
   dataRef.current = data
-  const fileRefRef = useRef(fileRef)
-  fileRefRef.current = fileRef
-  // dirtyRef phản chiếu cờ bp.dirty: còn true nghĩa là còn thay đổi local chưa ghi lên file
+  const repoRefRef = useRef(repoRef)
+  repoRefRef.current = repoRef
+  // dirtyRef phản chiếu cờ bp.dirty: còn true nghĩa là còn thay đổi local chưa ghi lên repo
   const dirtyRef = useRef(local.loadDirty())
   const writeInFlight = useRef<Promise<boolean> | null>(null)
 
@@ -55,28 +50,30 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setSyncStatus('synced')
   }, [])
 
-  /** Đọc file về. KHÔNG bao giờ đè lên thay đổi local chưa ghi. */
-  const refreshFromGraph = useCallback(async (ref: FileRef) => {
+  /** Đọc dữ liệu từ repo về. KHÔNG bao giờ đè lên thay đổi local chưa ghi. */
+  const refresh = useCallback(async (ref: RepoRef) => {
     if (dirtyRef.current) return
     setSyncStatus('syncing')
-    const fresh = await readAll(ref)
+    const fresh = await readData(ref)
     if (dirtyRef.current) return // người dùng vừa sửa trong lúc đang tải — giữ bản local
-    dataRef.current = fresh
-    setData(fresh)
-    local.saveCachedData(fresh)
+    if (fresh !== null) {
+      dataRef.current = fresh
+      setData(fresh)
+      local.saveCachedData(fresh)
+    }
     markSynced()
   }, [markSynced])
 
-  /** Ghi toàn bộ dữ liệu hiện tại lên file. Trả về true nếu thành công. Gọi chồng sẽ gộp làm một. */
+  /** Ghi toàn bộ dữ liệu hiện tại lên repo. Trả về true nếu thành công. Gọi chồng sẽ gộp làm một. */
   const flushWrite = useCallback(async (): Promise<boolean> => {
     if (writeInFlight.current) return writeInFlight.current
     const run = (async () => {
-      const ref = fileRefRef.current
+      const ref = repoRefRef.current
       if (!ref || !dirtyRef.current) return !dirtyRef.current
       if (!navigator.onLine) { setSyncStatus('offline'); return false }
       setSyncStatus('syncing')
       try {
-        await writeAll(ref, dataRef.current)
+        await writeData(ref, dataRef.current)
         markSynced()
         return true
       } catch {
@@ -105,7 +102,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const isDemo = useMemo(() => new URLSearchParams(window.location.search).get('demo') === '1', [])
 
-  // boot: finish a pending login redirect, restore connection, refresh data
+  // boot: khôi phục kết nối repo + đọc dữ liệu mới nhất
   useEffect(() => {
     if (isDemo) {
       void import('./demo-data').then(({ demoData }) => {
@@ -123,67 +120,58 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setData(cached)
         dataRef.current = cached // gán thẳng: flushWrite bên dưới có thể chạy trước khi React render lại
       } else if (dirtyRef.current) {
-        // cờ dirty còn nhưng cache mất (bị xóa tay): không có gì để ghi, bỏ cờ để khỏi chặn đọc file
+        // cờ dirty còn nhưng cache mất (bị xóa tay): không có gì để ghi, bỏ cờ để khỏi chặn đọc
         local.saveDirty(false)
         dirtyRef.current = false
       }
-      const ref = local.loadFileRef()
-      try {
-        const account = await completeRedirect()
-        if (account && ref) {
-          setFileRef(ref)
-          setAccountEmail(account.username)
-          setPhase('ready')
-          if (!navigator.onLine) { setSyncStatus('offline'); return }
-          if (dirtyRef.current) {
-            // còn thay đổi chưa ghi từ phiên trước: đẩy bản local lên file trước, không để file cũ đè mất
-            const ok = await flushWrite()
-            if (!ok) return // ghi chưa được thì tuyệt đối không đọc đè
-          }
-          await refreshFromGraph(ref)
-          return
-        }
-      } catch {
-        if (ref && cached) { setFileRef(ref); setPhase('ready'); setSyncStatus('offline'); return }
-      }
-      setPhase('connect')
-    })().catch(() => setPhase('connect'))
-  }, [refreshFromGraph, isDemo])
-
-  const signIn = useCallback(async () => {
-    setConnectError('')
-    await login()
-  }, [])
-
-  const connectFile = useCallback(async (shareUrl: string, clientId: string) => {
-    setConnectError('')
-    if (clientId && clientId !== getStoredClientId()) setStoredClientId(clientId)
-    try {
-      const ref = await resolveShareLink(shareUrl)
-      await ensureSheets(ref)
-      local.saveFileRef(ref, shareUrl)
-      setFileRef(ref)
-      const me = await getMe().catch(() => ({ email: '', name: '' }))
-      setAccountEmail(me.email)
-      await refreshFromGraph(ref)
+      const ref = local.loadRepoRef()
+      if (!ref || !getStoredToken()) { setPhase('connect'); return }
+      setRepoRef(ref)
       setPhase('ready')
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e)
-      if (msg === 'NOT_SIGNED_IN' || msg === 'MISSING_CLIENT_ID') throw e
-      setConnectError(msg)
-      throw e
+      if (!navigator.onLine) { setSyncStatus('offline'); return }
+      try {
+        setAccountLogin(await whoAmI())
+        if (dirtyRef.current) {
+          // còn thay đổi chưa ghi từ phiên trước: đẩy bản local lên repo trước, không để bản cũ đè mất
+          const ok = await flushWrite()
+          if (!ok) return // ghi chưa được thì tuyệt đối không đọc đè
+        }
+        await refresh(ref)
+      } catch {
+        setSyncStatus('error')
+      }
+    })().catch(() => setPhase('connect'))
+  }, [refresh, flushWrite, isDemo])
+
+  const connect = useCallback(async (repoInput: string, token: string) => {
+    setStoredToken(token)
+    const ref = await connectRepo(repoInput)
+    const login = await whoAmI().catch(() => '')
+    const existing = await readData(ref)
+    if (existing === null) {
+      // repo chưa có file dữ liệu: tạo file đầu tiên từ trạng thái rỗng
+      await writeData(ref, dataRef.current.items.length ? dataRef.current : EMPTY)
+    } else {
+      dataRef.current = existing
+      setData(existing)
+      local.saveCachedData(existing)
     }
-  }, [refreshFromGraph])
+    local.saveRepoRef(ref, repoInput)
+    setRepoRef(ref)
+    setAccountLogin(login)
+    markSynced()
+    setPhase('ready')
+  }, [markSynced])
 
   const disconnect = useCallback(async () => {
     if (writeTimer.current) window.clearTimeout(writeTimer.current)
     if (dirtyRef.current) await flushWrite() // cố ghi nốt thay đổi đang chờ trước khi ngắt
     local.clearConnection()
+    clearToken()
     dirtyRef.current = false
-    setFileRef(null)
+    setRepoRef(null)
     setData(EMPTY)
     setPhase('connect')
-    await logout().catch(() => undefined)
   }, [flushWrite])
 
   const mutate = useCallback((updater: (d: AppData) => AppData) => {
@@ -203,15 +191,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (writeTimer.current) window.clearTimeout(writeTimer.current)
     const ok = await flushWrite()
     if (!ok && dirtyRef.current) return // ghi chưa xong thì không đọc đè
-    const ref = fileRefRef.current
-    if (ref && navigator.onLine) await refreshFromGraph(ref).catch(() => setSyncStatus('error'))
-  }, [flushWrite, refreshFromGraph])
+    const ref = repoRefRef.current
+    if (ref && navigator.onLine) await refresh(ref).catch(() => setSyncStatus('error'))
+  }, [flushWrite, refresh])
 
   const value = useMemo<AppStore>(() => ({
-    phase, data, fileRef, shareUrl: local.loadShareUrl(), accountEmail,
-    syncStatus, lastSync, online, connectError,
-    signIn, connectFile, disconnect, syncNow, mutate,
-  }), [phase, data, fileRef, accountEmail, syncStatus, lastSync, online, connectError, signIn, connectFile, disconnect, syncNow, mutate])
+    phase, data, repoRef, accountLogin,
+    syncStatus, lastSync, online,
+    connect, disconnect, syncNow, mutate,
+  }), [phase, data, repoRef, accountLogin, syncStatus, lastSync, online, connect, disconnect, syncNow, mutate])
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

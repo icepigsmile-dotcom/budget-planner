@@ -1,6 +1,7 @@
 import { useApp } from '../store/app-context'
 import * as act from '../store/actions'
 import { PiggyMascot } from '../components/mascot'
+import { exportCsv, exportJson } from '../lib/export'
 
 function ThemeCard({ active, name, desc, preview, onPick }: {
   active: boolean; name: string; desc: string; preview: React.ReactNode; onPick: () => void
@@ -18,7 +19,7 @@ function ThemeCard({ active, name, desc, preview, onPick }: {
 }
 
 export function SettingsPage() {
-  const { data, mutate, fileRef, shareUrl, accountEmail, lastSync, syncStatus, syncNow, disconnect } = useApp()
+  const { data, mutate, repoRef, accountLogin, lastSync, syncStatus, syncNow, disconnect } = useApp()
   const theme = data.settings.theme
   const time = lastSync ? new Date(lastSync).toLocaleString('vi-VN') : '—'
 
@@ -63,11 +64,11 @@ export function SettingsPage() {
       </div>
 
       <div className="card" style={{ padding: '16px 18px' }}>
-        <div style={{ fontSize: 13, fontWeight: 800 }}>Kết nối OneDrive</div>
+        <div style={{ fontSize: 13, fontWeight: 800 }}>Kết nối GitHub</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '7px 14px', fontSize: 12.5, marginTop: 10 }}>
-          <span className="muted">File</span>
-          <span className="ellipsis" style={{ fontWeight: 600 }}>{fileRef?.name ?? '—'} {shareUrl && <span className="faint">— {shareUrl.slice(0, 44)}…</span>}</span>
-          <span className="muted">Tài khoản</span><span style={{ fontWeight: 600 }}>{accountEmail || '—'}</span>
+          <span className="muted">Repo</span>
+          <span className="ellipsis" style={{ fontWeight: 600 }}>{repoRef ? `${repoRef.owner}/${repoRef.repo}` : '—'} <span className="faint">(riêng tư)</span></span>
+          <span className="muted">Tài khoản</span><span style={{ fontWeight: 600 }}>{accountLogin || '—'}</span>
           <span className="muted">Đồng bộ</span>
           <span style={{ fontWeight: 600, color: syncStatus === 'error' || syncStatus === 'offline' ? 'var(--warn)' : 'var(--ok)' }}>
             ● {syncStatus === 'syncing' ? 'Đang đồng bộ…' : syncStatus === 'offline' ? 'Mất mạng' : syncStatus === 'error' ? 'Lỗi đồng bộ' : syncStatus === 'dirty' ? 'Có thay đổi chưa lưu' : `Đã đồng bộ ${time}`}
@@ -75,13 +76,22 @@ export function SettingsPage() {
         </div>
         <div style={{ display: 'flex', gap: 8, marginTop: 13, flexWrap: 'wrap' }}>
           <button className="btn btn-outline" style={{ fontSize: 11.5, padding: '7px 13px' }} onClick={() => void syncNow()}>Đồng bộ ngay</button>
-          {fileRef?.webUrl && (
-            <a className="btn btn-ghost" style={{ fontSize: 11.5, padding: '7px 13px', textDecoration: 'none' }} href={fileRef.webUrl} target="_blank" rel="noreferrer">Mở file Excel ↗</a>
+          {repoRef?.webUrl && (
+            <a className="btn btn-ghost" style={{ fontSize: 11.5, padding: '7px 13px', textDecoration: 'none' }} href={repoRef.webUrl} target="_blank" rel="noreferrer">Mở repo ↗</a>
           )}
           <button className="btn btn-danger-outline" style={{ fontSize: 11.5, padding: '7px 13px' }}
-            onClick={() => { if (window.confirm('Ngắt kết nối và đăng xuất? Dữ liệu vẫn nằm nguyên trong file Excel trên OneDrive.')) void disconnect() }}>
-            Ngắt kết nối / đổi file
+            onClick={() => { if (window.confirm('Ngắt kết nối và xóa token trên thiết bị này? Dữ liệu vẫn nằm nguyên trong repo GitHub.')) void disconnect() }}>
+            Ngắt kết nối / đổi repo
           </button>
+        </div>
+      </div>
+
+      <div className="card" style={{ padding: '16px 18px' }}>
+        <div style={{ fontSize: 13, fontWeight: 800 }}>Sao lưu &amp; xuất dữ liệu</div>
+        <div className="muted" style={{ fontSize: 11.5, marginTop: 3, lineHeight: 1.5 }}>Xuất CSV mở được bằng Excel; JSON là bản sao đúng định dạng file trong repo.</div>
+        <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+          <button className="btn btn-outline" style={{ fontSize: 11.5, padding: '7px 13px' }} onClick={() => exportCsv(data)}>Xuất Excel (CSV)</button>
+          <button className="btn btn-ghost" style={{ fontSize: 11.5, padding: '7px 13px' }} onClick={() => exportJson(data)}>Tải bản sao JSON</button>
         </div>
       </div>
 

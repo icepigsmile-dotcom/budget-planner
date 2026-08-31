@@ -1,83 +1,86 @@
 import { useState } from 'react'
 import { useApp } from '../store/app-context'
-import { getAccount, getStoredClientId } from '../lib/msal'
 import { PiggyMascot } from '../components/mascot'
-import { loadShareUrl } from '../lib/storage-local'
+import { loadRepoInput } from '../lib/storage-local'
+import { getStoredToken } from '../lib/github-storage'
 
 type State = 'idle' | 'checking' | 'error'
 
+const ERROR_TEXT: Record<string, string> = {
+  BAD_REPO: 'Repo không đúng dạng. Nhập "tên-tài-khoản/tên-repo" hoặc dán link https://github.com/…',
+  NO_TOKEN: 'Cần dán mã truy cập (token) — xem hướng dẫn bên dưới.',
+  GH_401: 'Token không hợp lệ hoặc đã hết hạn. Tạo token mới theo hướng dẫn bên dưới.',
+  GH_403: 'Token không có quyền trên repo này. Khi tạo token, mục Repository access phải chọn đúng repo, quyền Contents: Read and write.',
+  REPO_NOT_FOUND: 'Không tìm thấy repo. Kiểm tra tên repo, và token phải được cấp quyền truy cập đúng repo đó.',
+  REPO_IS_PUBLIC: 'Repo này đang PUBLIC — dữ liệu chi tiêu sẽ bị lộ. Tạo repo Private (hoặc chuyển repo này sang Private) rồi kết nối lại.',
+  NO_WRITE_PERMISSION: 'Token chỉ có quyền đọc. Tạo lại token với quyền Contents: Read and write.',
+}
+
 export function ConnectPage() {
-  const { signIn, connectFile, connectError } = useApp()
-  const [link, setLink] = useState(loadShareUrl())
-  const [clientId, setClientId] = useState(getStoredClientId())
+  const { connect } = useApp()
+  const [repoInput, setRepoInput] = useState(loadRepoInput())
+  const [token, setToken] = useState(getStoredToken())
   const [state, setState] = useState<State>('idle')
   const [error, setError] = useState('')
-  const [showAdvanced, setShowAdvanced] = useState(!getStoredClientId())
-  const account = getAccount()
+  const [showGuide, setShowGuide] = useState(!getStoredToken())
 
   const doConnect = async () => {
     setError('')
-    if (!clientId.trim()) { setError('Cần nhập Application (client) ID — xem hướng dẫn trong mục Cài đặt nâng cao.'); return }
-    if (!link.trim()) { setError('Dán link file Excel trên OneDrive của anh vào ô trên.'); return }
+    if (!repoInput.trim()) { setError('Nhập repo GitHub riêng tư của anh, ví dụ: icepigsmile-dotcom/budget-planner-data'); return }
+    if (!token.trim()) { setError('Dán mã truy cập (Personal Access Token) vào ô bên dưới.'); return }
     setState('checking')
     try {
-      await connectFile(link, clientId)
+      await connect(repoInput, token)
+      setState('idle')
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
       setState('error')
-      if (msg === 'NOT_SIGNED_IN') setError('Chưa đăng nhập — bấm "Đăng nhập Microsoft" trước.')
-      else if (msg === 'NOT_XLSX') setError('Link không trỏ tới file Excel (.xlsx). Tạo 1 file Excel trống trên OneDrive rồi lấy link chia sẻ.')
-      else if (msg.startsWith('GRAPH_403') || msg.startsWith('GRAPH_401')) setError('Không có quyền trên file này. Dùng link của file trong chính OneDrive của tài khoản đang đăng nhập (OneDrive → chuột phải file → Sao chép liên kết). Không cần mở quyền cho người khác.')
-      else if (msg.startsWith('GRAPH_404')) setError('Không tìm thấy file từ link này. Kiểm tra lại link chia sẻ.')
-      else setError(`Không truy cập được file: ${msg}`)
-      return
+      setError(ERROR_TEXT[msg] ?? `Không kết nối được: ${msg}`)
     }
-    setState('idle')
   }
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--hero-bg)', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '48px 20px' }}>
-      <div style={{ width: '100%', maxWidth: 420, color: 'var(--hero-text)' }}>
+      <div style={{ width: '100%', maxWidth: 440, color: 'var(--hero-text)' }}>
         <PiggyMascot size={64} />
         <h1 style={{ fontSize: 26, fontWeight: 800, marginTop: 16, lineHeight: 1.25 }}>Kế hoạch mua sắm của bạn</h1>
         <p style={{ fontSize: 13.5, opacity: 0.85, lineHeight: 1.55 }}>Lập danh sách, so sánh giá và biết chính xác khi nào bạn đủ tiền mua.</p>
       </div>
-      <div className="card" style={{ width: '100%', maxWidth: 420, marginTop: 20, padding: 20 }}>
+      <div className="card" style={{ width: '100%', maxWidth: 440, marginTop: 20, padding: 20 }}>
         <div style={{ fontSize: 14, fontWeight: 800 }}>Kết nối dữ liệu</div>
         <p className="muted" style={{ fontSize: 11.5, lineHeight: 1.5, margin: '4px 0 12px' }}>
-          Dán link file Excel trên OneDrive cá nhân của bạn. Mọi dữ liệu được lưu vào file này.
+          Dữ liệu lưu thành 1 file trong repo GitHub <b>riêng tư</b> của bạn — đồng bộ mọi thiết bị, kèm lịch sử mọi thay đổi.
         </p>
-        <button className="btn btn-ghost" style={{ width: '100%', color: 'var(--text)' }} onClick={() => void signIn()}>
-          <svg width="14" height="14" viewBox="0 0 16 16"><rect x="1" y="1" width="6.5" height="6.5" fill="#F25022" /><rect x="8.5" y="1" width="6.5" height="6.5" fill="#7FBA00" /><rect x="1" y="8.5" width="6.5" height="6.5" fill="#00A4EF" /><rect x="8.5" y="8.5" width="6.5" height="6.5" fill="#FFB900" /></svg>
-          {account ? `Đã đăng nhập: ${account.username}` : 'Đăng nhập Microsoft'}
-        </button>
-        <div style={{ marginTop: 12 }}>
-          <label className="field-label">Link file Excel trên OneDrive</label>
-          <input className="input" placeholder="https://1drv.ms/x/…" value={link} onChange={(e) => setLink(e.target.value)} />
+        <div>
+          <label className="field-label">Repo riêng tư (tên-tài-khoản/tên-repo)</label>
+          <input className="input" placeholder="icepigsmile-dotcom/budget-planner-data" value={repoInput} onChange={(e) => setRepoInput(e.target.value)} />
         </div>
-        <button className="btn" style={{ fontSize: 11.5, color: 'var(--text-2)', padding: '8px 0' }} onClick={() => setShowAdvanced(!showAdvanced)}>
-          {showAdvanced ? '▾' : '▸'} Cài đặt nâng cao (lần đầu dùng)
+        <div style={{ marginTop: 12 }}>
+          <label className="field-label">Mã truy cập (Personal Access Token)</label>
+          <input className="input" type="password" placeholder="github_pat_…" value={token} onChange={(e) => setToken(e.target.value)} />
+        </div>
+        <button className="btn" style={{ fontSize: 11.5, color: 'var(--text-2)', padding: '8px 0' }} onClick={() => setShowGuide(!showGuide)}>
+          {showGuide ? '▾' : '▸'} Cách tạo repo + token (làm 1 lần, ~3 phút)
         </button>
-        {showAdvanced && (
-          <div style={{ background: 'var(--chip-bg)', borderRadius: 12, padding: 12 }}>
-            <label className="field-label">Application (client) ID</label>
-            <input className="input" placeholder="00000000-0000-0000-0000-000000000000" value={clientId} onChange={(e) => setClientId(e.target.value)} />
-            <p className="muted" style={{ fontSize: 10.5, lineHeight: 1.5, margin: '8px 0 0' }}>
-              Lấy 1 lần duy nhất tại <b>entra.microsoft.com</b> → App registrations → New registration → chọn
-              "Personal Microsoft accounts only", Redirect URI loại <b>Single-page application</b> = địa chỉ app này.
-              Chi tiết trong file SETUP.md kèm theo app.
-            </p>
+        {showGuide && (
+          <div style={{ background: 'var(--chip-bg)', borderRadius: 12, padding: 12, fontSize: 11, lineHeight: 1.65, color: 'var(--text-2)' }}>
+            <b>1. Tạo repo:</b> github.com → New repository → tên ví dụ <b>budget-planner-data</b> → chọn <b>Private</b> → Create.<br />
+            <b>2. Tạo token:</b> github.com → ảnh đại diện → Settings → Developer settings → Personal access tokens → <b>Fine-grained tokens</b> → Generate new token:<br />
+            · Repository access: <b>Only select repositories</b> → chọn repo vừa tạo<br />
+            · Permissions → Repository permissions → <b>Contents: Read and write</b><br />
+            · Expiration: chọn dài nhất có thể (hết hạn thì tạo lại, dán lại vào đây)<br />
+            <b>3.</b> Copy token (bắt đầu bằng <b>github_pat_</b>) dán vào ô trên. Token chỉ lưu trên thiết bị này.
           </div>
         )}
         {state === 'checking' && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'var(--chip-bg)', borderRadius: 12, padding: '12px 14px', marginTop: 12, fontSize: 12.5 }}>
-            <span className="spin">⟳</span> Đang kiểm tra quyền truy cập file…
+            <span className="spin">⟳</span> Đang kiểm tra repo và quyền truy cập…
           </div>
         )}
-        {(error || connectError) && state !== 'checking' && (
+        {error && state !== 'checking' && (
           <div style={{ background: 'var(--warn-bg)', border: '1px solid var(--warn-border)', borderRadius: 12, padding: '12px 14px', marginTop: 12 }}>
             <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--warn-deep)' }}>✕ Không kết nối được</div>
-            <div style={{ fontSize: 11.5, color: 'var(--warn-deep)', marginTop: 3, lineHeight: 1.5 }}>{error || connectError}</div>
+            <div style={{ fontSize: 11.5, color: 'var(--warn-deep)', marginTop: 3, lineHeight: 1.5 }}>{error}</div>
           </div>
         )}
         <button className="btn btn-primary" style={{ width: '100%', marginTop: 12 }} disabled={state === 'checking'} onClick={() => void doConnect()}>
@@ -85,7 +88,7 @@ export function ConnectPage() {
         </button>
       </div>
       <div style={{ fontSize: 10.5, color: 'var(--hero-text)', opacity: 0.6, marginTop: 'auto', paddingTop: 24, textAlign: 'center' }}>
-        Chỉ một người dùng · dữ liệu nằm trong OneDrive của bạn
+        Chỉ một người dùng · dữ liệu nằm trong repo riêng tư của bạn · không có server trung gian
       </div>
     </div>
   )
