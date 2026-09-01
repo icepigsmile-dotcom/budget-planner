@@ -27,6 +27,10 @@ describe('normalizeData — file JSON bị sửa tay không làm app chết', ()
     expect(data.items[1].priority).toBe('Medium')
     expect(data.items[1].status).toBe('Idea')
     expect(data.items[1].estimatedPrice).toBe(2000)
+    // số lượng thiếu hoặc hỏng thì về 1, số lẻ/âm cũng về hợp lệ
+    expect(data.items[0].quantity).toBe(1)
+    const q = normalizeData({ items: [{ id: 'a', quantity: 2.6 }, { id: 'b', quantity: -3 }, { id: 'c', quantity: '4' }] })
+    expect(q.items.map((i) => i.quantity)).toEqual([3, 1, 4])
   })
 
   it('url độc bị loại; rating kẹp 0–5; thiếu mảng nào thì thành mảng rỗng', () => {

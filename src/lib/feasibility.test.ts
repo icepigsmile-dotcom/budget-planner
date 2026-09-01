@@ -8,7 +8,7 @@ function makeItem(over: Partial<Item>): Item {
   return {
     id: over.id ?? 'item-1',
     name: 'x', category: 'Khác', description: '',
-    priority: 'Medium', estimatedPrice: 0, chosenQuoteId: '',
+    priority: 'Medium', estimatedPrice: 0, quantity: 1, chosenQuoteId: '',
     targetMonth: '', status: 'Saving', imageUrl: '', note: '',
     purchasedAt: '', purchasedPrice: 0,
     createdAt: '2026-01-01', updatedAt: '2026-01-01',
@@ -93,6 +93,24 @@ describe('món đã mua trừ khỏi tích lũy', () => {
     // 1tr khởi điểm + 3tr (07) + 2tr (08) − 2tr đã mua = 4tr
     expect(plan.availableNow).toBe(4_000_000)
     expect(plan.byItem['active'].allocatedNow).toBe(4_000_000)
+  })
+})
+
+describe('số lượng nhiều hơn 1', () => {
+  it('mục tiêu tiết kiệm = đơn giá × số lượng', () => {
+    // 2 ghế × 3tr = 6tr; quỹ: khởi điểm 1tr + 1tr/tháng (08 hiện tại đã tính) — đủ ở tháng thứ 4 sau hiện tại
+    const data = makeData(
+      [makeItem({ id: 'ghe', estimatedPrice: 3_000_000, quantity: 2, targetMonth: '2026-10' })],
+      [], 1_000_000, 1_000_000,
+    )
+    const plan = computePlan(data, NOW)
+    const p = plan.byItem['ghe']
+    expect(p.price).toBe(6_000_000)
+    expect(plan.totalTarget).toBe(6_000_000)
+    // quỹ: 08→2tr, 09→3tr, 10→4tr, 11→5tr, 12→6tr
+    expect(p.fundedMonth).toBe('2026-12')
+    expect(p.feasible).toBe(false)
+    expect(p.shortfallAtTarget).toBe(2_000_000)
   })
 })
 

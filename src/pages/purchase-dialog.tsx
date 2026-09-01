@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { Item } from '../types'
+import { itemTotal } from '../types'
 import { Modal, MoneyInput } from '../components/ui'
 
 export function PurchaseDialog({ item, onConfirm, onClose }: {
@@ -8,7 +9,7 @@ export function PurchaseDialog({ item, onConfirm, onClose }: {
   onClose: () => void
 }) {
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
-  const [price, setPrice] = useState(item.estimatedPrice)
+  const [price, setPrice] = useState(itemTotal(item))
   const [error, setError] = useState('')
 
   const submit = () => {
@@ -28,7 +29,7 @@ export function PurchaseDialog({ item, onConfirm, onClose }: {
           <input className="input" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
         </div>
         <div>
-          <label className="field-label">Giá mua thực tế</label>
+          <label className="field-label">Giá mua thực tế{item.quantity > 1 ? ` (tổng cho ${item.quantity} cái)` : ''}</label>
           <MoneyInput value={price} onChange={setPrice} />
         </div>
         {error && <div style={{ fontSize: 12, color: 'var(--danger)', fontWeight: 600 }}>{error}</div>}

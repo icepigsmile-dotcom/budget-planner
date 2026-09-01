@@ -10,7 +10,7 @@ export function ItemFormModal({ item, onSave, onClose }: { item: Item | null; on
     item ?? {
       id: newId('item'),
       name: '', category: CATEGORIES[0], description: '',
-      priority: 'Medium', estimatedPrice: 0, chosenQuoteId: '',
+      priority: 'Medium', estimatedPrice: 0, quantity: 1, chosenQuoteId: '',
       targetMonth: '', status: 'Saving', imageUrl: '', note: '',
       purchasedAt: '', purchasedPrice: 0,
       createdAt: todayIso(), updatedAt: todayIso(),
@@ -21,7 +21,7 @@ export function ItemFormModal({ item, onSave, onClose }: { item: Item | null; on
 
   const submit = () => {
     if (!form.name.trim()) { setError('Cần nhập tên món đồ.'); return }
-    if (form.estimatedPrice <= 0) { setError('Cần nhập giá dự kiến lớn hơn 0.'); return }
+    if (form.estimatedPrice <= 0) { setError('Cần nhập đơn giá lớn hơn 0.'); return }
     if (!form.targetMonth && form.status === 'Saving') { setError('Món đang tiết kiệm cần thời điểm mong muốn có.'); return }
     onSave({ ...form, name: form.name.trim() })
     onClose()
@@ -50,13 +50,29 @@ export function ItemFormModal({ item, onSave, onClose }: { item: Item | null; on
         </div>
         <div className="grid2">
           <div>
-            <label className="field-label">Giá dự kiến *</label>
+            <label className="field-label">Đơn giá (1 cái) *</label>
             <MoneyInput value={form.estimatedPrice} onChange={(v) => set('estimatedPrice', v)} placeholder="8.000.000" />
           </div>
           <div>
-            <label className="field-label">Mong muốn có vào</label>
-            <MonthInput value={form.targetMonth} onChange={(v) => set('targetMonth', v)} />
+            <label className="field-label">Số lượng</label>
+            <input
+              className="input num"
+              type="number"
+              min={1}
+              step={1}
+              value={form.quantity}
+              onChange={(e) => set('quantity', Math.max(1, Math.round(Number(e.target.value) || 1)))}
+            />
           </div>
+        </div>
+        {form.quantity > 1 && form.estimatedPrice > 0 && (
+          <div className="muted num" style={{ fontSize: 12, fontWeight: 600 }}>
+            Thành tiền: {(form.estimatedPrice * form.quantity).toLocaleString('vi-VN')} ₫
+          </div>
+        )}
+        <div>
+          <label className="field-label">Mong muốn có vào</label>
+          <MonthInput value={form.targetMonth} onChange={(v) => set('targetMonth', v)} />
         </div>
         <div>
           <label className="field-label">Trạng thái</label>

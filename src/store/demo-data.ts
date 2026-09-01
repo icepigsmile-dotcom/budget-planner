@@ -10,17 +10,17 @@ export function demoData(): AppData {
     items: [
       {
         id: 'demo-iphone', name: 'iPhone 17 Pro 256GB', category: 'Điện tử', description: 'Màu titan tự nhiên',
-        priority: 'High', estimatedPrice: 34_590_000, chosenQuoteId: '', targetMonth: addMonths(now, 7),
+        priority: 'High', estimatedPrice: 34_590_000, quantity: 1, chosenQuoteId: '', targetMonth: addMonths(now, 7),
         status: 'Saving', imageUrl: '', note: '', purchasedAt: '', purchasedPrice: 0, createdAt: iso, updatedAt: iso,
       },
       {
         id: 'demo-mayloc', name: 'Máy lọc không khí Xiaomi 4 Pro', category: 'Gia dụng', description: 'Bản quốc tế, màu trắng',
-        priority: 'Medium', estimatedPrice: 8_000_000, chosenQuoteId: 'demo-q1', targetMonth: addMonths(now, 4),
+        priority: 'Medium', estimatedPrice: 8_000_000, quantity: 1, chosenQuoteId: 'demo-q1', targetMonth: addMonths(now, 4),
         status: 'Saving', imageUrl: '', note: 'Chờ sale 11/11 nếu kịp', purchasedAt: '', purchasedPrice: 0, createdAt: iso, updatedAt: iso,
       },
       {
         id: 'demo-ghe', name: 'Ghế công thái học Epione', category: 'Nội thất', description: '',
-        priority: 'Low', estimatedPrice: 6_490_000, chosenQuoteId: 'demo-q5', targetMonth: addMonths(now, 3),
+        priority: 'Low', estimatedPrice: 6_490_000, quantity: 2, chosenQuoteId: 'demo-q5', targetMonth: addMonths(now, 3),
         status: 'Saving', imageUrl: '', note: '', purchasedAt: '', purchasedPrice: 0, createdAt: iso, updatedAt: iso,
       },
     ],

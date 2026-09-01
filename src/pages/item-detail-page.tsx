@@ -3,7 +3,7 @@ import { useApp } from '../store/app-context'
 import { computePlan } from '../lib/feasibility'
 import { currentMonth, displayMonth } from '../lib/months'
 import { formatVnd } from '../lib/money'
-import { PRIORITY_LABEL, STATUS_LABEL } from '../types'
+import { itemTotal, PRIORITY_LABEL, STATUS_LABEL } from '../types'
 import { ItemAvatar } from '../components/mascot'
 import { PriceHistoryChart } from '../components/charts'
 import { latestQuotesBySeller, judgeQuotes, QuoteRow } from '../components/quote-table'
@@ -60,10 +60,15 @@ export function ItemDetailPage({ itemId, onBack }: { itemId: string; onBack: () 
             <div style={{ display: 'flex', justifyContent: 'center' }}>
               <ItemAvatar id={item.id} imageUrl={item.imageUrl} size={120} theme={theme} />
             </div>
-            <div style={{ fontSize: 17, fontWeight: 800, marginTop: 14 }}>{item.name}</div>
+            <div style={{ fontSize: 17, fontWeight: 800, marginTop: 14 }}>
+              {item.name}{item.quantity > 1 && <span className="muted" style={{ fontWeight: 600 }}> ×{item.quantity}</span>}
+            </div>
             <div className="num" style={{ fontSize: 22, fontWeight: 800, color: 'var(--ok)', marginTop: 4 }}>
-              {formatVnd(item.estimatedPrice)}
-              {chosenQuote && <span className="muted" style={{ fontSize: 11.5, fontWeight: 500 }}> · giá đã chốt từ {chosenQuote.seller}</span>}
+              {formatVnd(itemTotal(item))}
+              <span className="muted" style={{ fontSize: 11.5, fontWeight: 500 }}>
+                {item.quantity > 1 && <> · {formatVnd(item.estimatedPrice)}/cái</>}
+                {chosenQuote && <> · giá đã chốt từ {chosenQuote.seller}</>}
+              </span>
             </div>
             <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
               <span className="chip chip-ok">{STATUS_LABEL[item.status]}</span>
@@ -72,6 +77,7 @@ export function ItemDetailPage({ itemId, onBack }: { itemId: string; onBack: () 
             </div>
             <div style={{ borderTop: '1px solid var(--row-border)', marginTop: 14, paddingTop: 12, display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '7px 14px', fontSize: 12.5 }}>
               <span className="muted">Mong muốn có</span><span style={{ fontWeight: 600, textAlign: 'right' }}>{displayMonth(item.targetMonth)}</span>
+              {item.quantity > 1 && <><span className="muted">Số lượng</span><span className="num" style={{ fontWeight: 600, textAlign: 'right' }}>{item.quantity}</span></>}
               {item.description && <><span className="muted">Thông số</span><span style={{ fontWeight: 600, textAlign: 'right' }}>{item.description}</span></>}
               {item.note && <><span className="muted">Ghi chú</span><span style={{ fontWeight: 600, textAlign: 'right' }}>{item.note}</span></>}
               {item.status === 'Purchased' && <><span className="muted">Đã mua</span><span style={{ fontWeight: 600, textAlign: 'right' }}>{item.purchasedAt} · {formatVnd(item.purchasedPrice)}</span></>}
@@ -130,7 +136,9 @@ export function ItemDetailPage({ itemId, onBack }: { itemId: string; onBack: () 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div className="card" style={{ padding: 20 }}>
             <div className="row-between" style={{ flexWrap: 'wrap', gap: 8 }}>
-              <div style={{ fontSize: 14, fontWeight: 800 }}>Báo giá <span className="muted" style={{ fontSize: 11.5, fontWeight: 500 }}>· {latest.length} nguồn</span></div>
+              <div style={{ fontSize: 14, fontWeight: 800 }}>
+                Báo giá <span className="muted" style={{ fontSize: 11.5, fontWeight: 500 }}>· {latest.length} nguồn{item.quantity > 1 ? ' · giá cho 1 cái' : ''}</span>
+              </div>
               <button className="btn btn-outline" style={{ padding: '7px 13px', fontSize: 12 }} onClick={() => setModal('quote')}>+ Thêm báo giá</button>
             </div>
             {verdicts.suggestedId && (

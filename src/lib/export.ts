@@ -1,5 +1,5 @@
 import type { AppData } from '../types'
-import { PRIORITY_LABEL, STATUS_LABEL } from '../types'
+import { itemTotal, PRIORITY_LABEL, STATUS_LABEL } from '../types'
 
 const UTF8_BOM = String.fromCharCode(0xfeff) // để Excel nhận đúng tiếng Việt khi mở CSV
 
@@ -34,8 +34,8 @@ export function exportCsv(data: AppData): void {
   const lines: string[] = []
   lines.push('MÓN ĐỒ')
   lines.push(csvRows([
-    ['Tên', 'Danh mục', 'Ưu tiên', 'Giá', 'Mong muốn có', 'Trạng thái', 'Ngày mua', 'Giá mua thực tế', 'Ghi chú'],
-    ...data.items.map((i) => [i.name, i.category, PRIORITY_LABEL[i.priority], i.estimatedPrice, i.targetMonth, STATUS_LABEL[i.status], i.purchasedAt, i.purchasedPrice, i.note] as (string | number)[]),
+    ['Tên', 'Danh mục', 'Ưu tiên', 'Đơn giá', 'Số lượng', 'Thành tiền', 'Mong muốn có', 'Trạng thái', 'Ngày mua', 'Giá mua thực tế', 'Ghi chú'],
+    ...data.items.map((i) => [i.name, i.category, PRIORITY_LABEL[i.priority], i.estimatedPrice, i.quantity, itemTotal(i), i.targetMonth, STATUS_LABEL[i.status], i.purchasedAt, i.purchasedPrice, i.note] as (string | number)[]),
   ]))
   lines.push('')
   lines.push('BÁO GIÁ')

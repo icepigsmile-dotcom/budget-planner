@@ -37,6 +37,7 @@ export function normalizeItem(r: Raw): Item {
     description: asText(r.description),
     priority: asPriority(r.priority),
     estimatedPrice: asNumber(r.estimatedPrice),
+    quantity: Math.max(1, Math.round(asNumber(r.quantity)) || 1),
     chosenQuoteId: asText(r.chosenQuoteId),
     targetMonth: asText(r.targetMonth),
     status: asStatus(r.status),

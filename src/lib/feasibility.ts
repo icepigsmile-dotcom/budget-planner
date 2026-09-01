@@ -1,4 +1,5 @@
 import type { AppData, Item } from '../types'
+import { itemTotal } from '../types'
 import { ceilThousand } from './money'
 import { addMonths, compareMonth, monthDiff } from './months'
 
@@ -65,7 +66,7 @@ export function computePlan(data: AppData, now: string, tableMonths = 18): PlanR
     purchasedTotal
 
   const active = sortForAllocation(data.items.filter((i) => i.status === 'Saving' || i.status === 'ReadyToBuy'))
-  const totalTarget = active.reduce((s, i) => s + i.estimatedPrice, 0)
+  const totalTarget = active.reduce((s, i) => s + itemTotal(i), 0)
 
   const lastTarget = active.reduce((max, i) => (i.targetMonth > max ? i.targetMonth : max), now)
   const horizon = monthDiff(now, lastTarget) + HORIZON_EXTRA
@@ -88,7 +89,8 @@ export function computePlan(data: AppData, now: string, tableMonths = 18): PlanR
   const byItem: Record<string, ItemPlan> = {}
   let cumBefore = 0
   for (const item of active) {
-    const cum = cumBefore + item.estimatedPrice
+    const total = itemTotal(item)
+    const cum = cumBefore + total
     let fundedMonth: string | null = null
     for (let k = 0; k <= horizon; k++) {
       if (funds[k] >= cum) {
@@ -96,7 +98,7 @@ export function computePlan(data: AppData, now: string, tableMonths = 18): PlanR
         break
       }
     }
-    const allocatedNow = Math.min(Math.max(availableNow - cumBefore, 0), item.estimatedPrice)
+    const allocatedNow = Math.min(Math.max(availableNow - cumBefore, 0), total)
     const target = item.targetMonth
     const hasTarget = !!target
     // chưa đặt thời điểm thì không có kết luận khả thi — coi remaining = 1 chỉ để tránh chia cho NaN
@@ -105,9 +107,9 @@ export function computePlan(data: AppData, now: string, tableMonths = 18): PlanR
     const feasible = hasTarget && fundedMonth !== null && compareMonth(fundedMonth, target) <= 0
     byItem[item.id] = {
       itemId: item.id,
-      price: item.estimatedPrice,
+      price: total,
       allocatedNow,
-      neededPerMonth: hasTarget ? ceilThousand(Math.max(item.estimatedPrice - allocatedNow, 0) / remaining) : 0,
+      neededPerMonth: hasTarget ? ceilThousand(Math.max(total - allocatedNow, 0) / remaining) : 0,
       fundedMonth,
       hasTarget,
       feasible,

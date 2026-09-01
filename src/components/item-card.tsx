@@ -1,5 +1,5 @@
 import type { Item } from '../types'
-import { PRIORITY_LABEL } from '../types'
+import { itemTotal, PRIORITY_LABEL } from '../types'
 import type { ItemPlan } from '../lib/feasibility'
 import { formatVnd } from '../lib/money'
 import { displayMonth } from '../lib/months'
@@ -23,8 +23,10 @@ export function ItemCard({ item, plan, theme, onClick }: { item: Item; plan?: It
       <ItemAvatar id={item.id} imageUrl={item.imageUrl} size={50} theme={theme} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div className="row-between" style={{ alignItems: 'baseline' }}>
-          <div className="ellipsis" style={{ fontWeight: 700, fontSize: 13.5 }}>{item.name}</div>
-          <div className="num" style={{ fontWeight: 700, fontSize: 13.5, flex: 'none', whiteSpace: 'nowrap' }}>{formatVnd(item.estimatedPrice)}</div>
+          <div className="ellipsis" style={{ fontWeight: 700, fontSize: 13.5 }}>
+            {item.name}{item.quantity > 1 && <span className="muted" style={{ fontWeight: 600 }}> ×{item.quantity}</span>}
+          </div>
+          <div className="num" style={{ fontWeight: 700, fontSize: 13.5, flex: 'none', whiteSpace: 'nowrap' }}>{formatVnd(itemTotal(item))}</div>
         </div>
         <div className="row-between muted" style={{ fontSize: 11.5, fontWeight: 600, margin: '3px 0 7px' }}>
           <span className="ellipsis">{item.targetMonth ? displayMonth(item.targetMonth) : 'chưa đặt thời điểm'} · Ưu tiên {PRIORITY_LABEL[item.priority].toLowerCase()}</span>

@@ -8,7 +8,9 @@ export interface Item {
   category: string
   description: string
   priority: Priority
+  /** đơn giá 1 cái — thành tiền = estimatedPrice × quantity */
   estimatedPrice: number
+  quantity: number
   chosenQuoteId: string
   /** YYYY-MM */
   targetMonth: string
@@ -69,3 +71,8 @@ export const STATUS_LABEL: Record<ItemStatus, string> = {
 }
 
 export const CATEGORIES = ['Điện tử', 'Gia dụng', 'Nội thất', 'Cá nhân', 'Khác']
+
+/** Thành tiền của món đồ = đơn giá × số lượng (số lượng thiếu/hỏng coi là 1). */
+export function itemTotal(item: Pick<Item, 'estimatedPrice' | 'quantity'>): number {
+  return item.estimatedPrice * Math.max(1, Math.round(item.quantity || 1))
+}
