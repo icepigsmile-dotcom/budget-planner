@@ -74,28 +74,8 @@ export const STATUS_LABEL: Record<ItemStatus, string> = {
 
 export const CATEGORIES = ['Điện tử', 'Gia dụng', 'Nội thất', 'Cá nhân', 'Khác']
 
-export const CATEGORY_ICONS: Record<string, string> = {
-  'Điện tử': '📱',
-  'Gia dụng': '🧺',
-  'Nội thất': '🪑',
-  'Cá nhân': '👜',
-  'Khác': '🎁',
-}
-
-/** Bộ biểu tượng chọn được cho món đồ. */
-export const ICON_CHOICES = [
-  '📱', '💻', '🖥️', '⌚', '🎧', '📷', '🎮', '📺', '🔊',
-  '❄️', '🧺', '🍳', '🤖', '💨', '🧹', '☕',
-  '🪑', '🛋️', '🛏️', '🚪', '💡',
-  '👟', '👗', '👜', '💄', '💍',
-  '🚲', '🏍️', '🚗', '✈️',
-  '🎸', '📚', '🏋️', '⛺', '🎁',
-]
-
-/** Biểu tượng hiển thị của món đồ: đã chọn thì dùng, chưa thì theo danh mục. */
-export function itemIcon(item: Pick<Item, 'icon' | 'category'>): string {
-  return item.icon || CATEGORY_ICONS[item.category] || '🎁'
-}
+// Icon món đồ được gán tự động từ tên + danh mục — xem components/item-icons.tsx.
+// Trường Item.icon giữ lại trong schema (không dùng ở giao diện) để tương thích dữ liệu cũ.
 
 /** Thành tiền của món đồ = đơn giá × số lượng (số lượng thiếu/hỏng coi là 1). */
 export function itemTotal(item: Pick<Item, 'estimatedPrice' | 'quantity'>): number {

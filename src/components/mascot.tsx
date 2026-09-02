@@ -1,3 +1,5 @@
+import { iconKeyFor, ItemIcon } from './item-icons'
+
 /** Linh vật pastel lấy từ mockup: heo, thỏ, mèo — dùng cho logo, trạng thái rỗng, khối cảnh báo. */
 
 export function PiggyMascot({ size = 40 }: { size?: number }) {
@@ -55,8 +57,10 @@ function hashCode(s: string): number {
   return Math.abs(h)
 }
 
-/** Ô ảnh của món đồ: có ảnh thì hiện ảnh; không thì hiện biểu tượng (emoji) của món đồ trên nền màu. */
-export function ItemAvatar({ id, icon, imageUrl, size = 46, theme }: { id: string; icon: string; imageUrl?: string; size?: number; theme: string }) {
+/** Ô ảnh của món đồ: có ảnh thì hiện ảnh; không thì hiện icon vẽ sẵn gán tự động theo tên + danh mục. */
+export function ItemAvatar({ id, name, category, imageUrl, size = 46, theme }: {
+  id: string; name: string; category: string; imageUrl?: string; size?: number; theme: string
+}) {
   const radius = theme === 'pastel' ? size * 0.35 : size * 0.2
   if (imageUrl) {
     return (
@@ -72,8 +76,8 @@ export function ItemAvatar({ id, icon, imageUrl, size = 46, theme }: { id: strin
   }
   const bg = theme === 'pastel' ? PASTEL_TILES[hashCode(id) % PASTEL_TILES.length] : 'var(--progress-track)'
   return (
-    <div style={{ width: size, height: size, flex: 'none', borderRadius: radius, background: bg, display: 'grid', placeItems: 'center', fontSize: Math.round(size * 0.5), lineHeight: 1 }}>
-      {icon}
+    <div style={{ width: size, height: size, flex: 'none', borderRadius: radius, background: bg, display: 'grid', placeItems: 'center', color: 'var(--text-2)' }}>
+      <ItemIcon kind={iconKeyFor(name, category)} size={Math.round(size * 0.52)} />
     </div>
   )
 }

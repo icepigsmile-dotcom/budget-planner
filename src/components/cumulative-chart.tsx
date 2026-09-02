@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { formatVnd, formatVndShort } from '../lib/money'
 import { displayMonth, displayMonthShort } from '../lib/months'
+import { ItemIcon } from './item-icons'
 
 export interface MilestoneItem {
+  /** khóa icon trong bộ icon vẽ sẵn (item-icons.tsx) */
   icon: string
   name: string
   total: number
@@ -95,8 +97,8 @@ export function CumulativeChart({ points, milestones }: { points: { month: strin
         >
           <div style={{ fontSize: 11, fontWeight: 800 }}>Tháng {displayMonth(activeMilestone.month)}</div>
           {activeMilestone.items.map((it) => (
-            <div key={it.name} style={{ display: 'flex', gap: 6, alignItems: 'baseline', marginTop: 5, fontSize: 11.5 }}>
-              <span>{it.icon}</span>
+            <div key={it.name} style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 5, fontSize: 11.5 }}>
+              <span style={{ color: 'var(--text-2)', display: 'inline-flex' }}><ItemIcon kind={it.icon} size={13} /></span>
               <span className="ellipsis" style={{ fontWeight: 600, flex: 1, minWidth: 0 }}>{it.name}</span>
               <span className="num" style={{ flex: 'none', color: it.feasible ? 'var(--ok)' : 'var(--warn)', fontWeight: 700 }}>
                 {formatVnd(it.total)}

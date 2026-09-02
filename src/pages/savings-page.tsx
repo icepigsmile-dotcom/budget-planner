@@ -4,7 +4,7 @@ import { computePlan } from '../lib/feasibility'
 import { currentMonth, displayMonth } from '../lib/months'
 import { formatVnd, parseVnd } from '../lib/money'
 import { CumulativeChart, type Milestone } from '../components/cumulative-chart'
-import { itemIcon } from '../types'
+import { iconKeyFor } from '../components/item-icons'
 import * as act from '../store/actions'
 
 function MonthAmountCell({ value, isDefault, onCommit }: { value: number; isDefault: boolean; onCommit: (v: number) => void }) {
@@ -49,7 +49,7 @@ export function SavingsPage() {
   for (const item of plan.activeItems) {
     if (!item.targetMonth) continue
     const p = plan.byItem[item.id]
-    const entry = { icon: itemIcon(item), name: item.name, total: p?.price ?? 0, feasible: p?.feasible ?? false }
+    const entry = { icon: iconKeyFor(item.name, item.category), name: item.name, total: p?.price ?? 0, feasible: p?.feasible ?? false }
     const existing = milestones.find((m) => m.month === item.targetMonth)
     if (existing) existing.items.push(entry)
     else milestones.push({ month: item.targetMonth, items: [entry] })

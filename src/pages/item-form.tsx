@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { Item, ItemStatus, Priority } from '../types'
-import { CATEGORIES, CATEGORY_ICONS, ICON_CHOICES, PRIORITY_LABEL, STATUS_LABEL } from '../types'
+import { CATEGORIES, PRIORITY_LABEL, STATUS_LABEL } from '../types'
 import { Modal, MoneyInput, MonthInput } from '../components/ui'
 import { newId } from '../store/actions'
 import { todayIso } from '../lib/months'
@@ -82,38 +82,6 @@ export function ItemFormModal({ item, onSave, onClose }: { item: Item | null; on
             ))}
             {form.status === 'Purchased' && <option value="Purchased">{STATUS_LABEL.Purchased}</option>}
           </select>
-        </div>
-        <div>
-          <label className="field-label">Biểu tượng</label>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-            <button
-              type="button"
-              onClick={() => set('icon', '')}
-              title="Tự động theo danh mục"
-              style={{
-                width: 38, height: 38, borderRadius: 10, fontSize: 17, display: 'grid', placeItems: 'center',
-                border: form.icon === '' ? '2px solid var(--ok)' : '1px solid var(--input-border)',
-                background: form.icon === '' ? 'var(--ok-bg)' : 'var(--card)',
-              }}
-            >
-              {CATEGORY_ICONS[form.category] ?? '🎁'}
-            </button>
-            {ICON_CHOICES.map((ic) => (
-              <button
-                key={ic}
-                type="button"
-                onClick={() => set('icon', ic)}
-                style={{
-                  width: 38, height: 38, borderRadius: 10, fontSize: 17, display: 'grid', placeItems: 'center',
-                  border: form.icon === ic ? '2px solid var(--ok)' : '1px solid var(--input-border)',
-                  background: form.icon === ic ? 'var(--ok-bg)' : 'var(--card)',
-                }}
-              >
-                {ic}
-              </button>
-            ))}
-          </div>
-          <div className="faint" style={{ fontSize: 10.5, marginTop: 5 }}>Ô đầu tiên = tự chọn theo danh mục</div>
         </div>
         <div>
           <label className="field-label">Thông số mong muốn</label>
