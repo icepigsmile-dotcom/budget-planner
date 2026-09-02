@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { iconKeyFor, ItemIcon } from './item-icons'
 
 /** Linh vật pastel lấy từ mockup: heo, thỏ, mèo — dùng cho logo, trạng thái rỗng, khối cảnh báo. */
@@ -61,8 +62,10 @@ function hashCode(s: string): number {
 export function ItemAvatar({ id, name, category, imageUrl, size = 46, theme }: {
   id: string; name: string; category: string; imageUrl?: string; size?: number; theme: string
 }) {
+  // ảnh tải lỗi (link hỏng, trang bán chặn dùng ảnh từ ngoài) thì quay về icon vẽ, không để ô trống
+  const [imgFailed, setImgFailed] = useState(false)
   const radius = theme === 'pastel' ? size * 0.35 : size * 0.2
-  if (imageUrl) {
+  if (imageUrl && !imgFailed) {
     return (
       <img
         src={imageUrl}
@@ -70,7 +73,7 @@ export function ItemAvatar({ id, name, category, imageUrl, size = 46, theme }: {
         width={size}
         height={size}
         style={{ borderRadius: radius, objectFit: 'cover', flex: 'none' }}
-        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+        onError={() => setImgFailed(true)}
       />
     )
   }
