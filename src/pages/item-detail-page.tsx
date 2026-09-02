@@ -3,7 +3,7 @@ import { useApp } from '../store/app-context'
 import { computePlan } from '../lib/feasibility'
 import { currentMonth, displayMonth } from '../lib/months'
 import { formatVnd } from '../lib/money'
-import { itemTotal, PRIORITY_LABEL, STATUS_LABEL } from '../types'
+import { itemIcon, itemTotal, PRIORITY_LABEL, STATUS_LABEL } from '../types'
 import { ItemAvatar } from '../components/mascot'
 import { PriceHistoryChart } from '../components/charts'
 import { latestQuotesBySeller, judgeQuotes, QuoteRow } from '../components/quote-table'
@@ -58,7 +58,7 @@ export function ItemDetailPage({ itemId, onBack }: { itemId: string; onBack: () 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div className="card" style={{ padding: 20 }}>
             <div style={{ display: 'flex', justifyContent: 'center' }}>
-              <ItemAvatar id={item.id} imageUrl={item.imageUrl} size={120} theme={theme} />
+              <ItemAvatar id={item.id} icon={itemIcon(item)} imageUrl={item.imageUrl} size={120} theme={theme} />
             </div>
             <div style={{ fontSize: 17, fontWeight: 800, marginTop: 14 }}>
               {item.name}{item.quantity > 1 && <span className="muted" style={{ fontWeight: 600 }}> ×{item.quantity}</span>}

@@ -1,6 +1,4 @@
-import type { ReactElement } from 'react'
-
-/** Linh vật pastel lấy từ mockup: heo, thỏ, mèo, gấu. */
+/** Linh vật pastel lấy từ mockup: heo, thỏ, mèo — dùng cho logo, trạng thái rỗng, khối cảnh báo. */
 
 export function PiggyMascot({ size = 40 }: { size?: number }) {
   return (
@@ -49,12 +47,7 @@ export function CatMascot({ size = 30, tone = '#DCD6F7' }: { size?: number; tone
   )
 }
 
-const AVATARS: { bg: string; render: (size: number) => ReactElement }[] = [
-  { bg: '#EFEBFC', render: (s) => <CatMascot size={s} tone="#DCD6F7" /> },
-  { bg: '#FBEFF2', render: (s) => <BunnyMascot size={s} /> },
-  { bg: '#FDF3DE', render: (s) => <CatMascot size={s} tone="#FBE7B2" /> },
-  { bg: '#FBEFF2', render: (s) => <PiggyMascot size={s} /> },
-]
+const PASTEL_TILES = ['#EFEBFC', '#FBEFF2', '#FDF3DE', '#DFF3E7', '#FDEBDB']
 
 function hashCode(s: string): number {
   let h = 0
@@ -62,8 +55,8 @@ function hashCode(s: string): number {
   return Math.abs(h)
 }
 
-/** Ô ảnh của món đồ: có ảnh thì hiện ảnh; không thì pastel hiện linh vật, minimal hiện ô "Ảnh". */
-export function ItemAvatar({ id, imageUrl, size = 46, theme }: { id: string; imageUrl?: string; size?: number; theme: string }) {
+/** Ô ảnh của món đồ: có ảnh thì hiện ảnh; không thì hiện biểu tượng (emoji) của món đồ trên nền màu. */
+export function ItemAvatar({ id, icon, imageUrl, size = 46, theme }: { id: string; icon: string; imageUrl?: string; size?: number; theme: string }) {
   const radius = theme === 'pastel' ? size * 0.35 : size * 0.2
   if (imageUrl) {
     return (
@@ -77,17 +70,10 @@ export function ItemAvatar({ id, imageUrl, size = 46, theme }: { id: string; ima
       />
     )
   }
-  if (theme === 'pastel') {
-    const a = AVATARS[hashCode(id) % AVATARS.length]
-    return (
-      <div style={{ width: size, height: size, flex: 'none', borderRadius: radius, background: a.bg, display: 'grid', placeItems: 'center' }}>
-        {a.render(Math.round(size * 0.58))}
-      </div>
-    )
-  }
+  const bg = theme === 'pastel' ? PASTEL_TILES[hashCode(id) % PASTEL_TILES.length] : 'var(--progress-track)'
   return (
-    <div style={{ width: size, height: size, flex: 'none', borderRadius: radius, background: 'var(--progress-track)', display: 'grid', placeItems: 'center', fontSize: 9, color: 'var(--text-3)' }}>
-      Ảnh
+    <div style={{ width: size, height: size, flex: 'none', borderRadius: radius, background: bg, display: 'grid', placeItems: 'center', fontSize: Math.round(size * 0.5), lineHeight: 1 }}>
+      {icon}
     </div>
   )
 }

@@ -9,7 +9,7 @@ function makeItem(over: Partial<Item>): Item {
     id: over.id ?? 'item-1',
     name: 'x', category: 'Khác', description: '',
     priority: 'Medium', estimatedPrice: 0, quantity: 1, chosenQuoteId: '',
-    targetMonth: '', status: 'Saving', imageUrl: '', note: '',
+    targetMonth: '', status: 'Saving', icon: '', imageUrl: '', note: '',
     purchasedAt: '', purchasedPrice: 0,
     createdAt: '2026-01-01', updatedAt: '2026-01-01',
     ...over,

@@ -1,5 +1,5 @@
 import type { Item } from '../types'
-import { itemTotal, PRIORITY_LABEL } from '../types'
+import { itemIcon, itemTotal, PRIORITY_LABEL } from '../types'
 import type { ItemPlan } from '../lib/feasibility'
 import { formatVnd } from '../lib/money'
 import { displayMonth } from '../lib/months'
@@ -20,7 +20,7 @@ export function ItemCard({ item, plan, theme, onClick }: { item: Item; plan?: It
         borderWidth: warn ? 1.5 : 1, borderStyle: 'solid',
       }}
     >
-      <ItemAvatar id={item.id} imageUrl={item.imageUrl} size={50} theme={theme} />
+      <ItemAvatar id={item.id} icon={itemIcon(item)} imageUrl={item.imageUrl} size={50} theme={theme} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div className="row-between" style={{ alignItems: 'baseline' }}>
           <div className="ellipsis" style={{ fontWeight: 700, fontSize: 13.5 }}>

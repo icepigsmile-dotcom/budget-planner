@@ -32,6 +32,7 @@ export function ItemsPage({ onOpenItem, onAddItem }: { onOpenItem: (id: string) 
   }, [data.items, search, category, priority, status])
 
   const selectStyle = { width: 'auto', padding: '8px 12px', borderRadius: 999, fontSize: 12.5 } as const
+  const filterLabelStyle = { fontSize: 10.5, fontWeight: 700, color: 'var(--text-2)', marginBottom: 3, display: 'block', paddingLeft: 6 } as const
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14, position: 'relative' }}>
@@ -40,19 +41,28 @@ export function ItemsPage({ onOpenItem, onAddItem }: { onOpenItem: (id: string) 
         <button className="btn btn-primary hide-mobile" onClick={onAddItem}>+ Thêm món đồ</button>
       </div>
       <input className="input" style={{ borderRadius: 999 }} placeholder="Tìm món đồ…" value={search} onChange={(e) => setSearch(e.target.value)} />
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        <select className="input" style={selectStyle} value={status} onChange={(e) => setStatus(e.target.value)}>
-          <option>{ALL}</option>
-          {Object.values(STATUS_LABEL).map((s) => <option key={s}>{s}</option>)}
-        </select>
-        <select className="input" style={selectStyle} value={category} onChange={(e) => setCategory(e.target.value)}>
-          <option>{ALL}</option>
-          {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
-        </select>
-        <select className="input" style={selectStyle} value={priority} onChange={(e) => setPriority(e.target.value)}>
-          <option>{ALL}</option>
-          {(Object.keys(PRIORITY_LABEL) as Priority[]).map((p) => <option key={p}>{PRIORITY_LABEL[p]}</option>)}
-        </select>
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        <div>
+          <label className="field-label" style={filterLabelStyle}>Trạng thái</label>
+          <select className="input" style={selectStyle} value={status} onChange={(e) => setStatus(e.target.value)}>
+            <option>{ALL}</option>
+            {Object.values(STATUS_LABEL).map((s) => <option key={s}>{s}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="field-label" style={filterLabelStyle}>Danh mục</label>
+          <select className="input" style={selectStyle} value={category} onChange={(e) => setCategory(e.target.value)}>
+            <option>{ALL}</option>
+            {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="field-label" style={filterLabelStyle}>Độ ưu tiên</label>
+          <select className="input" style={selectStyle} value={priority} onChange={(e) => setPriority(e.target.value)}>
+            <option>{ALL}</option>
+            {(Object.keys(PRIORITY_LABEL) as Priority[]).map((p) => <option key={p}>{PRIORITY_LABEL[p]}</option>)}
+          </select>
+        </div>
       </div>
 
       {data.items.length === 0 ? (

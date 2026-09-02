@@ -3,7 +3,8 @@ import { useApp } from '../store/app-context'
 import { computePlan } from '../lib/feasibility'
 import { currentMonth, displayMonth } from '../lib/months'
 import { formatVnd, parseVnd } from '../lib/money'
-import { CumulativeChart } from '../components/charts'
+import { CumulativeChart, type Milestone } from '../components/cumulative-chart'
+import { itemIcon } from '../types'
 import * as act from '../store/actions'
 
 function MonthAmountCell({ value, isDefault, onCommit }: { value: number; isDefault: boolean; onCommit: (v: number) => void }) {
@@ -43,9 +44,16 @@ export function SavingsPage() {
   const { data, mutate } = useApp()
   const now = currentMonth()
   const plan = useMemo(() => computePlan(data, now, 18), [data, now])
-  const markers = plan.activeItems
-    .filter((i) => i.targetMonth)
-    .map((i) => ({ month: i.targetMonth, label: i.name.split(' ')[0], warn: !plan.byItem[i.id]?.feasible }))
+  // gom các món theo tháng cần tiền — mỗi tháng một thẻ trên biểu đồ
+  const milestones: Milestone[] = []
+  for (const item of plan.activeItems) {
+    if (!item.targetMonth) continue
+    const p = plan.byItem[item.id]
+    const entry = { icon: itemIcon(item), name: item.name, total: p?.price ?? 0, feasible: p?.feasible ?? false }
+    const existing = milestones.find((m) => m.month === item.targetMonth)
+    if (existing) existing.items.push(entry)
+    else milestones.push({ month: item.targetMonth, items: [entry] })
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -105,7 +113,7 @@ export function SavingsPage() {
             Hiện có {formatVnd(Math.max(plan.availableNow, 0))} · mục tiêu {formatVnd(plan.totalTarget)}
           </div>
           <div style={{ marginTop: 10 }}>
-            <CumulativeChart points={plan.cumulative} markers={markers} />
+            <CumulativeChart points={plan.cumulative} milestones={milestones} />
           </div>
         </div>
       </div>

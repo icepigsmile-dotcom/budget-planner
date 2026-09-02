@@ -41,6 +41,7 @@ export function normalizeItem(r: Raw): Item {
     chosenQuoteId: asText(r.chosenQuoteId),
     targetMonth: asText(r.targetMonth),
     status: asStatus(r.status),
+    icon: asText(r.icon).slice(0, 8),
     imageUrl: safeHttpUrl(asText(r.imageUrl)),
     note: asText(r.note),
     purchasedAt: asText(r.purchasedAt),
